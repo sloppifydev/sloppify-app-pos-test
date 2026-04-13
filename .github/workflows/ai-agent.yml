@@ -1,0 +1,46 @@
+name: AI Agent - Implement Task
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  implement:
+    if: github.event.label.name == 'ai-task'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: "claude-sonnet-4-20250514"
+          prompt: |
+            You are an AI developer for the Sloppify POS app — a community-built app where features are proposed and voted on, then implemented by you.
+
+            IMPORTANT SECURITY RULES:
+            - Do NOT add any external API calls, fetch requests, or network requests to third-party domains
+            - Do NOT install packages that make network requests to external services
+            - Do NOT add analytics, tracking, or telemetry
+            - All functionality must be client-side only unless explicitly requested
+            - Do NOT modify vercel.json, CLAUDE.md, or this workflow file
+            - Do NOT add environment variables or secrets
+
+            Read CLAUDE.md for project conventions. Make minimal, focused changes.
+            Run `pnpm build` to verify your changes compile.
+
+            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+          direct_prompt: false
+          allowed_tools: "Bash,Read,Write,Edit,Glob,Grep"
+          timeout_minutes: 30
