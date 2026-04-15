@@ -61,6 +61,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center gap-8">
+      <h1 className="text-3xl font-bold text-center max-w-2xl leading-tight">
+        The Stinkiest Group of People Who Have Never Heard of Soap
+      </h1>
       <button
         onClick={handleClick}
         className="px-12 py-6 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400 dark:hover:bg-zinc-600 active:scale-95 rounded-xl text-2xl font-bold text-foreground transition-all select-none cursor-pointer shadow-md"
