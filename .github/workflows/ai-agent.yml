@@ -3,15 +3,20 @@ name: AI Agent - Implement Task
 on:
   issues:
     types: [labeled]
+  issue_comment:
+    types: [created]
 
 jobs:
   implement:
-    if: github.event.label.name == 'ai-task'
+    if: >-
+      (github.event_name == 'issues' && github.event.label.name == 'ai-task' && github.event.issue.user.login == 'yeetwell') ||
+      (github.event_name == 'issue_comment' && github.event.comment.user.login == 'yeetwell' && contains(github.event.comment.body, '@claude retry'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
 
     steps:
       - name: Checkout
@@ -24,23 +29,27 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           model: "claude-sonnet-4-20250514"
-          prompt: |
-            You are an AI developer for the Sloppify POS app — a community-built app where features are proposed and voted on, then implemented by you.
+          direct_prompt: |
+            You are an AI developer for the Sloppify project — a community-driven app where users propose features and AI implements them.
 
-            IMPORTANT SECURITY RULES:
-            - Do NOT add any external API calls, fetch requests, or network requests to third-party domains
-            - Do NOT install packages that make network requests to external services
-            - Do NOT add analytics, tracking, or telemetry
-            - All functionality must be client-side only unless explicitly requested
-            - Do NOT modify vercel.json, CLAUDE.md, or this workflow file
-            - Do NOT add environment variables or secrets
-
-            Read CLAUDE.md for project conventions. Make minimal, focused changes.
-            Run `pnpm build` to verify your changes compile.
+            Read the issue below and implement the requested feature or fix. Follow these rules:
+            - Read CLAUDE.md for project conventions
+            - Make minimal, focused changes
+            - Run `pnpm build` to verify your changes compile
+            - Do NOT modify unrelated code
+            - Create clear, descriptive commit messages
+            - NEVER use the Read tool on any path under /tmp/github-images/. Those are images the action pre-downloaded from GitHub comments (including its own "Claude is working…" spinner) and their media types are unreliable — reading them crashes the run with an image/png vs image/gif mismatch.
+            - NEVER use the Read tool on binary media files (.png, .jpg, .jpeg, .gif, .webp, .mp3, .ogg, .wav, .mp4) anywhere. If you need to know what an image file is for, infer from filename + references in code.
+            - This is a Next.js App Router project. Static assets MUST live in the `public/` directory at the repo root. A file at `public/foo.png` is served at URL `/foo.png`. Files in `app/` are NOT served as static assets and will 404 in the browser.
+            - If the issue body contains attachment links to images, audio, or other media (typically Supabase storage URLs):
+                1. Always run from the repo root. Confirm with `pwd` and `ls` that `public/` exists (create it with `mkdir -p public` if needed).
+                2. Download each file with `curl -fLo public/<filename> <url>` using the filename from the attachment link (not a guessed name).
+                3. Reference them from code by the local root-relative path (e.g. `/filename.png`, `/filename.mp3`). NEVER reference the remote URL in committed code. NEVER put media files under `app/`, `src/`, `components/`, or any other subdirectory.
+                4. After downloading, run `ls public/` and verify each expected file is present with non-zero size before committing. `git add public/<filename>` explicitly — don't rely on `git add -A` alone.
 
             Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
             ${{ github.event.issue.body }}
-          direct_prompt: false
           allowed_tools: "Bash,Read,Write,Edit,Glob,Grep"
+          disallowed_tools: "Read(/tmp/github-images/**)"
           timeout_minutes: 30
